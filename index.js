@@ -8,6 +8,7 @@ import connectDB from './Database/config.js'; // Database connection import
 import authRoutes from "./Routers/authRouter.js";
 import flightRoutes from "./Routers/flightRouter.js";
 
+
 dotenv.config();
 const app = express();
 app.use(cors());
@@ -27,6 +28,7 @@ connectDB();
 app.use('/api', uploadRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/flights", flightRoutes);
+
 
 
 
