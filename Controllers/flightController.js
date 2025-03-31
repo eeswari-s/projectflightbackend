@@ -47,3 +47,45 @@ export const deleteFlight = async (req, res) => {
   }
 };
 
+// **Search Flights** ✈️
+export const searchFlights = async (req, res) => {
+  try {
+    console.log("🔍 API Hit Aaguthu"); 
+
+    const { departureFrom, goingTo, departureDate } = req.query;
+    const query = {};
+
+    if (departureFrom) query.departureFrom = { $regex: new RegExp(`^${departureFrom}$`, "i") };
+    if (goingTo) query.goingTo = { $regex: new RegExp(`^${goingTo}$`, "i") };
+
+    if (departureDate) {
+      // Convert the date string into the correct format
+      const formattedDate = new Date(departureDate);
+      if (!isNaN(formattedDate.getTime())) {
+        query.departureDate = {
+          $gte: new Date(formattedDate.setHours(0, 0, 0, 0)), 
+          $lt: new Date(formattedDate.setHours(23, 59, 59, 999)) 
+        };
+      } else {
+        return res.status(400).json({ message: "Invalid departure date format" });
+      }
+    }
+
+    console.log("🔍 MongoDB Query:", JSON.stringify(query, null, 2)); 
+
+    const flights = await Flight.find(query);
+    console.log("📌 Flights Found:", flights.length > 0 ? flights : "No flights found"); 
+
+    if (flights.length === 0) {
+      return res.status(404).json({ message: "No flights found for this search." });
+    }
+
+    res.json(flights);
+  } catch (error) {
+    console.error("❌ Error fetching flights:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+
+
