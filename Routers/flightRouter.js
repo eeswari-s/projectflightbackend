@@ -1,5 +1,5 @@
 import express from "express";
-import { createFlight, getAllFlights, updateFlight, deleteFlight,  searchFlights} from "../Controllers/flightController.js";
+import { createFlight, getAllFlights, updateFlight, deleteFlight,  searchFlights, getFlightById} from "../Controllers/flightController.js";
 import { authMiddleware } from "../Middleware/authMiddleware.js";  // ✅ Import authMiddleware
 import { adminMiddleware } from "../Middleware/adminMiddleware.js"; 
 
