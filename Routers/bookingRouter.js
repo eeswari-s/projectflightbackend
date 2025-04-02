@@ -1,12 +1,9 @@
 import express from "express";
-import { bookSeat, getBookedSeats, confirmPayment } from "../Controllers/bookingController.js";
-
-
+import { createBooking, getBookedSeats , getBookingById } from "../Controllers/bookingController.js";
 
 const router = express.Router();
 
-router.post("/book-seat", bookSeat);
-router.get("/get-booked-seats/:flightId", getBookedSeats);
-router.post("/confirm-payment/:bookingId", confirmPayment);
-
+router.post("/book", createBooking);
+router.get("/booked-seats/:flightId", getBookedSeats); // Get booked seats
+router.get("/:id", getBookingById);
 export default router;

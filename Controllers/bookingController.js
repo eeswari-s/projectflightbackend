@@ -1,114 +1,114 @@
-import mongoose from "mongoose";
 import Booking from "../Models/bookingModels.js";
-import User from "../Models/userModel.js";
-import Flight from "../Models/flightModel.js";
+import Flight from "../Models/flightModel.js"; // Flight model import
+import generatePDF from "../utils/generatePDF.js";
+import path from 'path';
+import fs from 'fs';
+import { sendEmail } from "../utils/emailService.js";
+import dotenv from 'dotenv';
+import {fileURLToPath} from 'url';
 
-// Book a Flight
-export const bookSeat = async (req, res) => {
+dotenv.config();
+
+// ✅ Fix `__dirname` for ES Module support
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Create a new booking
+export const createBooking = async (req, res) => {
   try {
-    const { name, flightNumber, seat } = req.body;
+    const { name, age, phone, address, seat, flightId,email } = req.body;
 
-    // Validate input
-    if (!flightNumber) {
-      return res.status(400).json({ message: "Flight number is required" });
-    }
-    if (!seat || isNaN(seat) || seat < 1 || seat > 60) {
-      return res.status(400).json({ message: "Invalid seat number format" });
-    }
-
-    // Find the user by name (case-insensitive)
-    const user = await User.findOne({ name: { $regex: new RegExp("^" + name.trim() + "$", "i") } });
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Find the flight by flight number
-    const flight = await Flight.findOne({ flightNumber });
-    if (!flight) {
-      return res.status(404).json({ message: "Flight not found" });
+    if (!name || !age || !phone || !address || !seat || !flightId ||!email) {
+      return res.status(400).json({ message: "All fields are required" });
     }
 
     // Check if the seat is already booked
-    const existingBooking = await Booking.findOne({ flight: flight._id, seat });
+    const existingBooking = await Booking.findOne({ seat, flightId });
     if (existingBooking) {
-      return res.status(400).json({ message: "Seat already booked" });
+      return res.status(400).json({ message: "This seat is already booked" });
     }
 
-    // Base fare + Surcharges
-    const baseFare = flight.price;
-    const surcharges = 600;
-    const totalPrice = baseFare + surcharges;
-
-    // Create booking
-    const newBooking = new Booking({
-      user: user._id,
-      flight: flight._id,
-      seat,
-      totalPrice,
-    });
-
-    // Save booking
-    await newBooking.save();
-
-    res.status(201).json({
-      message: "Booking successful",
-      booking: {
-        id: newBooking._id,
-        seat: newBooking.seat,
-        totalPrice: newBooking.totalPrice,
-      },
-      flightDetails: {
-        flightNumber: flight.flightNumber,
-        flightName: flight.flightName,
-        departureFrom: flight.departureFrom,
-        goingTo: flight.goingTo,
-        departureDate: flight.departureDate,
-        departureTime: flight.departureTime,
-        arrivalTime: flight.arrivalTime,
-        baseFare: flight.price,
-        surcharges,
-        totalPrice,
-      },
-      userDetails: {
-        name: user.name,
-      },
-    });
-
-  } catch (error) {
-    console.error("Booking Error:", error);
-    res.status(500).json({ message: "Error booking the flight", error });
-  }
-};
-
-// Get all booked seats for a flight
-export const getBookedSeats = async (req, res) => {
-  try {
-    const { flightNumber } = req.params;
-
-    // Find the flight by number
-    const flight = await Flight.findOne({ flightNumber });
+    // Fetch flight price
+    const flight = await Flight.findById(flightId);
     if (!flight) {
       return res.status(404).json({ message: "Flight not found" });
     }
 
-    // Get all booked seats for the flight
-    const bookings = await Booking.find({ flight: flight._id }).select("seat");
+    const totalFare = flight.price + 731 + 176; // Price + surcharges + insurance
 
-    const bookedSeats = bookings.map((b) => b.seat);
-    res.json({ flightNumber, bookedSeats });
+    const newBooking = new Booking({
+      name,
+      age,
+      phone,
+      address,
+      seat,
+      flightId,
+      email,
+      totalFare,
+    });
 
+    await newBooking.save();
+
+    // ✅ Generate PDF
+    const pdfFileName = `booking_${newBooking._id}.pdf`;
+    const pdfFilePath = path.join(__dirname, '..', 'bookings', pdfFileName);
+    await generatePDF(newBooking, pdfFilePath);
+
+    // ✅ Check if PDF exists before responding
+    if (!fs.existsSync(pdfFilePath)) {
+      return res.status(500).json({ message: "PDF generation failed" });
+    }
+
+ // ✅ Send Confirmation Email
+ const emailSubject = "Booking Confirmation - Suki World Airlines";
+ const emailBody = `Hi ${name},\n\nYour booking is confirmed!\n\nBooking Details:\n- Seat No: ${seat}\n- Flight: ${flight.flightNumber} (${flight.name})\n- Total Fare: ${totalFare}\n\nThank you for choosing Suki World Airlines!`;
+ await sendEmail(email, emailSubject, emailBody);
+
+    res.status(201).json({ message: "Booking successful", booking: newBooking, pdfFilePath: `/bookings/${pdfFileName}` });
   } catch (error) {
-    console.error("Error fetching booked seats:", error);
-    res.status(500).json({ message: "Error fetching booked seats", error });
+    console.error("error in createBooking:",error);
+    console.error("error stack trace:", error.stack); // Log the stack trace for debugging
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
-// Payment confirmation (Mock)
-export const confirmPayment = async (req, res) => {
+// Get booked seats for a flight
+export const getBookedSeats = async (req, res) => {
   try {
-    res.json({ message: "Payment successful. Booking confirmed!" });
+    const { flightId } = req.params;
+    if (!flightId) {
+      return res.status(400).json({ message: "Flight ID is required" });
+    }
+
+    const bookings = await Booking.find({ flightId }).select("seat");
+    const bookedSeats = bookings.map((booking) => booking.seat);
+    res.json({ bookedSeats });
+
+    console.log("🔍 Booking Request Received:", req.body);
+    console.log("🛫 Flight ID:", flightId);
   } catch (error) {
-    console.error("Payment Error:", error);
-    res.status(500).json({ message: "Payment failed", error });
+    res.status(500).json({ message: "Server error", error });
   }
 };
+
+// Get Booking by ID
+export const getBookingById = async (req, res) => {
+  try {
+    const bookingId = req.params.id.trim(); // 🛠 Remove unwanted spaces/newlines
+    if (!bookingId.match(/^[0-9a-fA-F]{24}$/)) { // 🔥 Valid MongoDB ObjectId check
+      return res.status(400).json({ message: "Invalid Booking ID format" });
+    }
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    res.status(200).json(booking);
+  } catch (error) {
+    console.error("error in createBooking:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+

@@ -7,7 +7,7 @@ import uploadRoutes from './Routers/uploadRouter.js';
 import connectDB from './Database/config.js'; // Database connection import
 import authRoutes from "./Routers/authRouter.js";
 import flightRoutes from "./Routers/flightRouter.js";
-import bookingRoutes from "./Routers/bookingRouter.js";
+import bookingRouter from "./Routers/bookingRouter.js";
 
 
 dotenv.config();
@@ -22,6 +22,9 @@ const __dirname = path.dirname(__filename);
 // ✅ Serve 'uploads' folder as static (Fix for ENOENT error)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+//static file serving(for serving pdf files)
+app.use('/bookings', express.static(path.join(process.cwd(), 'bookings')));
+
 // Connect to database
 connectDB();
 
@@ -29,7 +32,8 @@ connectDB();
 app.use('/api', uploadRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/flights", flightRoutes);
-app.use("/api/booking", bookingRoutes);
+app.use("/api/booking", bookingRouter);
+
 
 
 

@@ -1,9 +1,24 @@
 import Flight from "../Models/flightModel.js";
 
+// Helper function to generate a random seat number
+const generateRandomSeat = (seats = ['A1', 'A2', 'A3', 'B1', 'B2', 'B3', 'C1', 'C2', 'C3']) => {
+  const randomIndex = Math.floor(Math.random() * seats.length);
+  return seats[randomIndex];
+};
+
 // **Create Flight**
 export const createFlight = async (req, res) => {
   try {
-    const flight = new Flight(req.body);
+    // Generate a random seat number
+    const randomSeat = generateRandomSeat();
+
+    // Include the random seat number in the request body
+    const flightData = {
+      ...req.body,
+      seatNumber: randomSeat,  // Add the random seat number here
+    };
+
+    const flight = new Flight(flightData);
     await flight.save();
     res.status(201).json({ message: "Flight added successfully", flight });
   } catch (error) {
@@ -25,7 +40,17 @@ export const getAllFlights = async (req, res) => {
 export const updateFlight = async (req, res) => {
   try {
     const { id } = req.params;
-    const updatedFlight = await Flight.findByIdAndUpdate(id, req.body, { new: true });
+
+    // Generate a random seat number (you can modify the seat generation logic as needed)
+    const randomSeat = generateRandomSeat();
+
+    // Prepare the updated flight data with the new seat number
+    const updatedFlightData = {
+      ...req.body,
+      seatNumber: randomSeat,  // Update the seat number with a random one
+    };
+
+    const updatedFlight = await Flight.findByIdAndUpdate(id, updatedFlightData, { new: true });
     if (!updatedFlight) return res.status(404).json({ message: "Flight not found" });
 
     res.status(200).json({ message: "Flight updated successfully", updatedFlight });
@@ -47,54 +72,39 @@ export const deleteFlight = async (req, res) => {
   }
 };
 
-// **Search Flights** ✈️
+
+// Search Flights
 export const searchFlights = async (req, res) => {
   try {
-    console.log("🔍 API Hit Aaguthu"); 
+      let { departureFrom, goingTo, departureDate, date } = req.query;
 
-    const { departureFrom, goingTo, departureDate } = req.query;
-    const query = {};
+      departureDate = departureDate || date;
 
-    if (departureFrom) query.departureFrom = { $regex: new RegExp(`^${departureFrom}$`, "i") };
-    if (goingTo) query.goingTo = { $regex: new RegExp(`^${goingTo}$`, "i") };
+      console.log("Received Search Query:", { departureFrom, goingTo, departureDate });
 
-    if (departureDate) {
-      // Convert the date string into the correct format
-      const formattedDate = new Date(departureDate);
-      if (!isNaN(formattedDate.getTime())) {
-        query.departureDate = {
-          $gte: new Date(formattedDate.setHours(0, 0, 0, 0)), 
-          $lt: new Date(formattedDate.setHours(23, 59, 59, 999)) 
-        };
-      } else {
-        return res.status(400).json({ message: "Invalid departure date format" });
+      if (!departureFrom || !goingTo || !departureDate) {
+          return res.status(400).json({ message: "Please provide departureFrom, goingTo, and departureDate" });
       }
-    }
 
-    console.log("🔍 MongoDB Query:", JSON.stringify(query, null, 2)); 
+      // Convert departureDate to full ISO format
+      const startDate = new Date(departureDate);
+      const endDate = new Date(departureDate);
+      endDate.setHours(23, 59, 59, 999); // Include full day range
 
-    const flights = await Flight.find(query);
-    console.log("📌 Flights Found:", flights.length > 0 ? flights : "No flights found"); 
+      const flights = await Flight.find({
+          departureFrom: { $regex: new RegExp(`^${departureFrom}$`, "i") }, // Case-insensitive search
+          goingTo: { $regex: new RegExp(`^${goingTo}$`, "i") }, // Case-insensitive search
+          departureDate: { $gte: startDate, $lte: endDate }
+      });
 
-    if (flights.length === 0) {
-      return res.status(404).json({ message: "No flights found for this search." });
-    }
+      console.log("Flights Found:", flights);
 
-    res.json(flights);
+      if (flights.length === 0) {
+          return res.status(404).json({ message: "No flights found!" });
+      }
+
+      res.status(200).json(flights);
   } catch (error) {
-    console.error("❌ Error fetching flights:", error);
-    res.status(500).json({ message: "Server Error" });
+      res.status(500).json({ message: "Server error", error: error.message });
   }
 };
-
-// getFlightById
-export const getFlightById = async (req, res) => {
-  try {
-    const flight = await Flight.findById(req.params.id);
-    if (!flight) return res.status(404).json({ message: "Flight not found" });
-    res.json(flight);
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
