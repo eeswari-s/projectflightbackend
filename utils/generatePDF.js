@@ -1,49 +1,46 @@
-import { PDFDocument } from 'pdf-lib';  
+import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-const generatePDF = async (bookingDetails, transactionDetails) => {
-  console.log("Booking Details:", bookingDetails); // Debugging
-  console.log("Transaction Details:", transactionDetails); // Debugging
+// ✅ Fix `__dirname` for ES Module support
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-  if (!bookingDetails || !transactionDetails) {
-    console.error("Missing booking or transaction details");
-    return null;
-  }
-
+const generatePDF = async (booking) => {
   try {
-    // Create a new PDF document
-    const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage();
-    const { width, height } = page.getSize();
+    const pdfFileName = `booking_${booking._id}.pdf`;
+    const pdfFilePath = path.join(__dirname, '..', 'bookings', pdfFileName);
 
-    // Draw the booking success details on the PDF
-    page.drawText(`Transaction Status: ${transactionDetails.status}`, { x: 50, y: height - 100, size: 18 });
-    page.drawText(`Booking ID: ${bookingDetails._id}`, { x: 50, y: height - 120, size: 12 });
-    page.drawText(`Name: ${bookingDetails.name}`, { x: 50, y: height - 140, size: 12 });
-    page.drawText(`Seat: ${bookingDetails.seat}`, { x: 50, y: height - 160, size: 12 });
-    page.drawText(`Flight: ${bookingDetails.flightId?.flightName || "N/A"}`, { x: 50, y: height - 180, size: 12 });
-    page.drawText(`Total Fare: ₹${bookingDetails.totalFare}`, { x: 50, y: height - 200, size: 12 });
+    const doc = new PDFDocument();
+    const writeStream = fs.createWriteStream(pdfFilePath);
+    doc.pipe(writeStream);
 
-    // Serialize the PDF to bytes
-    const pdfBytes = await pdfDoc.save();
+    // 📝 PDF Content
+    doc.fontSize(20).text('Flight Booking Confirmation', { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(14).text(`Name: ${booking.name}`);
+    doc.text(`Age: ${booking.age}`);
+    doc.text(`Phone: ${booking.phone}`);
+    doc.text(`Email: ${booking.email}`);
+    doc.text(`Address: ${booking.address}`);
+    doc.text(`Seat No: ${booking.seat}`);
+    doc.text(`Total Fare: ₹${booking.totalFare}`);
+    doc.text(`Flight ID: ${booking.flightId}`);
+    doc.moveDown();
+    doc.text('Thank you for booking with Suki World Airlines!', { align: 'center' });
 
-    // Ensure bookings folder exists
-    const dirPath = path.join(process.cwd(), 'bookings');
-    if (!fs.existsSync(dirPath)) {
-      fs.mkdirSync(dirPath);
-    }
+    doc.end();
 
-    // Save the PDF file
-    const filePath = path.join(dirPath, `${bookingDetails._id}-booking.pdf`);
-    fs.writeFileSync(filePath, pdfBytes);
+    // ✅ PDF generation success
+    return new Promise((resolve, reject) => {
+      writeStream.on('finish', () => resolve(pdfFilePath));
+      writeStream.on('error', (err) => reject(err));
+    });
 
-    console.log("PDF generated successfully:", filePath); // Debugging
-
-    return filePath;
   } catch (error) {
-    console.error("PDF generation error:", error);
-    return null;
+    console.error("PDF Generation Error:", error);
+    return null; // ❌ Error handling
   }
 };
 

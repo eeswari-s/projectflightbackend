@@ -50,9 +50,12 @@ export const createBooking = async (req, res) => {
     await newBooking.save();
 
     // ✅ Generate PDF
-    const pdfFileName = `booking_${newBooking._id}.pdf`;
-    const pdfFilePath = path.join(__dirname, '..', 'bookings', pdfFileName);
-    await generatePDF(newBooking, pdfFilePath);
+    const pdfFilePath = await generatePDF(newBooking);
+    
+    if (!pdfFilePath || !fs.existsSync(pdfFilePath)) {
+      return res.status(500).json({ message: "PDF generation failed" });
+    }
+
 
     // ✅ Check if PDF exists before responding
     if (!fs.existsSync(pdfFilePath)) {
@@ -64,7 +67,7 @@ export const createBooking = async (req, res) => {
  const emailBody = `Hi ${name},\n\nYour booking is confirmed!\n\nBooking Details:\n- Seat No: ${seat}\n- Flight: ${flight.flightNumber} (${flight.name})\n- Total Fare: ${totalFare}\n\nThank you for choosing Suki World Airlines!`;
  await sendEmail(email, emailSubject, emailBody);
 
-    res.status(201).json({ message: "Booking successful", booking: newBooking, pdfFilePath: `/bookings/${pdfFileName}` });
+    res.status(201).json({ message: "Booking successful", booking: newBooking, pdfFilePath });
   } catch (error) {
     console.error("error in createBooking:",error);
     console.error("error stack trace:", error.stack); // Log the stack trace for debugging

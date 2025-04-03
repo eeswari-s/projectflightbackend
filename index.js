@@ -8,6 +8,7 @@ import connectDB from './Database/config.js'; // Database connection import
 import authRoutes from "./Routers/authRouter.js";
 import flightRoutes from "./Routers/flightRouter.js";
 import bookingRouter from "./Routers/bookingRouter.js";
+import paymentRoutes from "./Routers/paymentRoutes.js";
 
 
 dotenv.config();
@@ -33,7 +34,7 @@ app.use('/api', uploadRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/flights", flightRoutes);
 app.use("/api/booking", bookingRouter);
-
+app.use('/api', paymentRoutes); //
 
 
 
