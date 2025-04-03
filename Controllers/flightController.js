@@ -88,8 +88,10 @@ console.log("Query Parameters:", req.query); // Log the query parameters
 console.log("Departure Date:", departureDate); // Log the departure date
       // Convert departureDate to full ISO format
       const startDate = new Date(departureDate);
-const endDate = new Date(departureDate);
-endDate.setUTCHours(23, 59, 59, 999);
+      startDate.setUTCHours(0, 0, 0, 0);
+  
+      const endDate = new Date(departureDate);
+      endDate.setUTCHours(23, 59, 59, 999);
 
 const flights = await Flight.find({
     departureFrom: { $regex: new RegExp(`^${departureFrom}$`, "i") },
@@ -97,9 +99,6 @@ const flights = await Flight.find({
     departureDate: { $gte: startDate, $lte: endDate }
 }); // Log the start date
      
-
-   
-
       console.log("Flights Found:", flights);
 
       if (flights.length === 0) {
