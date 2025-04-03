@@ -77,25 +77,28 @@ export const deleteFlight = async (req, res) => {
 export const searchFlights = async (req, res) => {
   try {
       let { departureFrom, goingTo, departureDate, date } = req.query;
-
+console.log("Query Parameters:", req.query); // Log the query parameters
       departureDate = departureDate || date;
 
-      console.log("Received Search Query:", { departureFrom, goingTo, departureDate });
+      
 
       if (!departureFrom || !goingTo || !departureDate) {
           return res.status(400).json({ message: "Please provide departureFrom, goingTo, and departureDate" });
       }
-
+console.log("Departure Date:", departureDate); // Log the departure date
       // Convert departureDate to full ISO format
       const startDate = new Date(departureDate);
-      const endDate = new Date(departureDate);
-      endDate.setHours(23, 59, 59, 999); // Include full day range
+const endDate = new Date(departureDate);
+endDate.setUTCHours(23, 59, 59, 999);
 
-      const flights = await Flight.find({
-          departureFrom: { $regex: new RegExp(`^${departureFrom}$`, "i") }, // Case-insensitive search
-          goingTo: { $regex: new RegExp(`^${goingTo}$`, "i") }, // Case-insensitive search
-          departureDate: { $gte: startDate, $lte: endDate }
-      });
+const flights = await Flight.find({
+    departureFrom: { $regex: new RegExp(`^${departureFrom}$`, "i") },
+    goingTo: { $regex: new RegExp(`^${goingTo}$`, "i") },
+    departureDate: { $gte: startDate, $lte: endDate }
+}); // Log the start date
+     
+
+   
 
       console.log("Flights Found:", flights);
 
