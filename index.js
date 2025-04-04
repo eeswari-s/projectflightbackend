@@ -34,7 +34,7 @@ app.use('/api', uploadRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/flights", flightRoutes);
 app.use("/api/booking", bookingRouter);
-app.use('/api', paymentRoutes); //
+app.use('/api/payment', paymentRoutes); //
 
 
 

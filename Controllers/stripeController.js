@@ -1,61 +1,43 @@
-import Stripe from 'stripe';
-import Booking from '../Models/bookingModels.js'; // Import Booking model
-import Flight from '../Models/flightModel.js'; // Import Flight model
-import StripeModel from '../Models/stripeModel.js'; // Import Stripe model
-import mongoose from 'mongoose';
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);  // Replace with your Stripe secret key
+import stripe from "../config/stripeConfig.js";
 
-// Controller function to create Stripe Checkout session
 export const createCheckoutSession = async (req, res) => {
-  const { bookingId, flightId } = req.body;
-  console.log('Received bookingId:', bookingId);
-  console.log('Received flightId:', flightId);
   try {
-    // Fetch booking and flight from the database
-    const bookingObjectId = mongoose.Types.ObjectId.isValid(bookingId) ? mongoose.Types.ObjectId(bookingId) : null;
-    const flightObjectId = mongoose.Types.ObjectId.isValid(flightId) ? mongoose.Types.ObjectId(flightId) : null;
+    const { amount } = req.body;
 
-
-    // Check if booking or flight doesn't exist
-    if (!bookingObjectId || !flightObjectId) {
-      return res.status(400).json({ error: 'Invalid bookingId or flightId' });
+    if (!amount) {
+      return res.status(400).json({ success: false, message: "Amount is required" });
     }
-  // Fetch booking and flight from the database
-  const booking = await Booking.findById(bookingObjectId);
-  const flight = await Flight.findById(flightObjectId);
-    // Create Stripe Checkout session
+
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
+      payment_method_types: ["card"],
+      mode: "payment",
+      success_url: "http://localhost:5173/payment-success", // Success URL
+      cancel_url: "http://localhost:5173/payment-failed", // Cancel URL
       line_items: [
         {
           price_data: {
-            currency: 'usd',
+            currency: "inr",
             product_data: {
-              name: flight.flightName, // Flight name
+              name: "Flight Booking",
             },
-            unit_amount: booking.totalFare * 100, // Price in cents
+            unit_amount: amount * 100, // Amount in paisa
           },
           quantity: 1,
         },
       ],
-      mode: 'payment',
-      success_url: `http://localhost:5173/payment-success?bookingId=${bookingId}`, // Pass bookingId to success URL
-      cancel_url: 'http://localhost:5173/payment-failed', // Cancel URL
     });
 
-    // Save session details in the Stripe model
-    const stripeData = new StripeModel({
-      bookingId,
-      flightId,
-      totalFare: booking.totalFare, // Store the totalFare from booking
+    res.status(200).json({
+      success: true,
+      message: "Checkout session created",
+      sessionId: session.id,// Frontend la Stripe checkout open panna use pannalam
+      checkoutUrl: session.url 
     });
-
-    await stripeData.save(); // Save session to the database
-
-    // Send session URL to the client for redirection to Stripe Checkout
-    res.json({ checkout_url: session.url });
   } catch (error) {
-    console.error('Error creating checkout session:', error.stack); // Log full error stack
-    res.status(500).json({ error: 'Internal Server Error', message: error.message }); // Send error details in response
+    res.status(500).json({
+      success: false,
+      message: "Checkout session creation failed",
+      error: error.message,
+    });
   }
 };
