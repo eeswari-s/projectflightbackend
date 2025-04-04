@@ -21,7 +21,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Upload Image Function
-const uploadImage = async (req, res) => {
+ const uploadImage = async (req, res) => {
   try {
     const file = req.file;
     if (!file) return res.status(400).json({ message: 'No file uploaded' });
@@ -50,4 +50,5 @@ const uploadImage = async (req, res) => {
   }
 };
 
-export { upload, uploadImage };
+export {uploadImage, upload};
+
