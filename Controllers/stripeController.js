@@ -11,7 +11,7 @@ export const createCheckoutSession = async (req, res) => {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
-      success_url: "https://projectflightfrontend-9m3y.vercel.app/payment-success", // Success URL
+      success_url: "http://localhost:5173/payment-success", // Success URL
       cancel_url: "http://localhost:5173/payment-failed", // Cancel URL
       line_items: [
         {
