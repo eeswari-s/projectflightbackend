@@ -25,12 +25,16 @@ export const createCheckoutSession = async (req, res) => {
           quantity: 1,
         },
       ],
+      metadata: {
+        bookingId: req.body.bookingId,  
+        email: req.body.email,          
+      },
     });
 
     res.status(200).json({
       success: true,
       message: "Checkout session created",
-      sessionId: session.id,// Frontend la Stripe checkout open panna use pannalam
+      sessionId: session.id,
       checkoutUrl: session.url 
     });
   } catch (error) {

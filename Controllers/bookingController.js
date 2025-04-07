@@ -95,23 +95,29 @@ export const getBookedSeats = async (req, res) => {
 };
 
 // Get Booking by ID
+
+
+
 export const getBookingById = async (req, res) => {
   try {
-    const bookingId = req.params.id.trim(); // 🛠 Remove unwanted spaces/newlines
-    if (!bookingId.match(/^[0-9a-fA-F]{24}$/)) { // 🔥 Valid MongoDB ObjectId check
-      return res.status(400).json({ message: "Invalid Booking ID format" });
+    const bookingId = req.params.id?.trim(); 
+
+  
+    if (!bookingId || !bookingId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: "Invalid or missing Booking ID format" });
     }
 
+    //  Find booking by ID
     const booking = await Booking.findById(bookingId);
+
     if (!booking) {
-      return res.status(404).json({ message: "Booking not found" });
+      return res.status(404).json({ message: "Booking not found with this ID" });
     }
 
-    res.status(200).json(booking);
+    //  Send success response
+    res.status(200).json({ success: true, booking });
   } catch (error) {
-    console.error("error in createBooking:", error);
-    res.status(500).json({ message: "Server error", error });
+    console.error("❌ Error in getBookingById:", error.message);
+    res.status(500).json({ message: "Server error while fetching booking", error: error.message });
   }
 };
-
-

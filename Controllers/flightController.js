@@ -1,12 +1,12 @@
 import Flight from "../Models/flightModel.js";
 
-// Helper function to generate a random seat number
+
 const generateRandomSeat = (seats = ['A1', 'A2', 'A3', 'B1', 'B2', 'B3', 'C1', 'C2', 'C3']) => {
   const randomIndex = Math.floor(Math.random() * seats.length);
   return seats[randomIndex];
 };
 
-// **Create Flight**
+// Create Flight
 export const createFlight = async (req, res) => {
   try {
     // Generate a random seat number
@@ -26,7 +26,7 @@ export const createFlight = async (req, res) => {
   }
 };
 
-// **Get All Flights**
+// Get All Flights
 export const getAllFlights = async (req, res) => {
   try {
     const flights = await Flight.find();
@@ -41,13 +41,13 @@ export const updateFlight = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Generate a random seat number (you can modify the seat generation logic as needed)
+    // Generate a random seat number 
     const randomSeat = generateRandomSeat();
 
-    // Prepare the updated flight data with the new seat number
+   
     const updatedFlightData = {
       ...req.body,
-      seatNumber: randomSeat,  // Update the seat number with a random one
+      seatNumber: randomSeat,  
     };
 
     const updatedFlight = await Flight.findByIdAndUpdate(id, updatedFlightData, { new: true });

@@ -3,8 +3,7 @@ import Booking from '../Models/bookingModels.js'; // Import Booking model
 import generatePDF from '../utils/generatePDF.js';
 import dotenv from 'dotenv';
 
-dotenv.config(); // Load environment variables
-
+dotenv.config(); 
 // Create Transporter
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -15,14 +14,14 @@ const transporter = nodemailer.createTransport({
 });
 
 // Send Payment Success Email
-const sendPaymentSuccessEmail = async (email, transactionDetails) => {
+export const sendPaymentSuccessEmail = async (email, transactionDetails) => {
   try {
     if (!email || !transactionDetails?.amount) {
       console.error("Missing email or transaction details.");
       return;
     }
 
-    const formattedAmount = (transactionDetails.amount / 100).toFixed(2); // Convert to INR
+    const formattedAmount = (transactionDetails.amount / 100).toFixed(2); 
 
     const mailOptions = {
       from: process.env.EMAIL_USER,
@@ -44,7 +43,7 @@ const sendPaymentSuccessEmail = async (email, transactionDetails) => {
 };
 
 // Send Booking Details PDF
-const sendBookingDetailsPDF = async (user, transactionDetails) => {
+export const sendBookingDetailsPDF = async (user, transactionDetails) => {
   try {
     if (!user?.email) {
       console.error("❌ User email missing, cannot send PDF.");
@@ -62,7 +61,7 @@ const sendBookingDetailsPDF = async (user, transactionDetails) => {
         {
           filename: 'BookingDetails.pdf',
           content: pdfBuffer,
-          contentType: 'application/pdf', // Ensure proper PDF encoding
+          contentType: 'application/pdf', 
         },
       ],
     };
@@ -75,7 +74,7 @@ const sendBookingDetailsPDF = async (user, transactionDetails) => {
 };
 
 // Handle Payment Success
-const paymentSuccess = async (req, res) => {
+export const paymentSuccess = async (req, res) => {
   try {
     const { bookingId, transactionDetails } = req.body;
 
@@ -106,4 +105,4 @@ const paymentSuccess = async (req, res) => {
   }
 };
 
-export { paymentSuccess };
+
